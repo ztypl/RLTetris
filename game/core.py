@@ -51,7 +51,7 @@ class Shape:
         return tuple((self.cx + x, self.cy + y) for x, y in self.get_local_coord(dd))
 
     def get_global_coord_offset(self, dx, dy, dd=0):
-        return tuple((self.cx + x + dx, self.cy + y + dy) for x, y in self.get_global_coord(dd))
+        return tuple((x + dx, y + dy) for x, y in self.get_global_coord(dd))
 
 
 class BoardCore:
@@ -89,13 +89,13 @@ class BoardCore:
     # 下一个形状
     def generate_next_shape(self):
         self.active_shape = self.next_shape
-        self.active_shape.set_center(self.width // 2, self.height - 1)
+        self.active_shape.set_center(self.height - 1, self.width // 2)
         self.next_shape = self.generate_shape()
 
     # 检测是否越界或碰撞
     def is_collapse(self, coords):
         for x, y in coords:
-            if x < 0 or y < 0 or y >= self.width or self.data[x][y] == 1:
+            if x < 0 or y < 0 or y >= self.width or self.data[x][y] != 0:
                 return True
         return False
 
@@ -104,47 +104,47 @@ class BoardCore:
         coords = self.active_shape.get_global_coord_offset(0, -1)
         if not self.is_collapse(coords):
             self.active_shape.cy -= 1
-            return False
-        return True
+            return True
+        return False
 
     # 右移
     def move_right(self):
         coords = self.active_shape.get_global_coord_offset(0, 1)
         if not self.is_collapse(coords):
             self.active_shape.cy += 1
-            return False
-        return True
+            return True
+        return False
 
     # 下移
     def move_down(self):
         coords = self.active_shape.get_global_coord_offset(-1, 0)
         if not self.is_collapse(coords):
-            self.active_shape.cx += 1
-            return False
-        return True
+            self.active_shape.cx -= 1
+            return True
+        return False
 
     # 顺时针旋转
     def rotate_right(self):
         coords = self.active_shape.get_global_coord_offset(0, 0, 1)
         if not self.is_collapse(coords):
-            self.active_shape.direction += 1
-            self.active_shape.direction %= 4
-            return False
-        return True
+            self.active_shape.direction_id += 1
+            self.active_shape.direction_id %= 4
+            return True
+        return False
 
     # 逆时针旋转
     def rotate_left(self):
         coords = self.active_shape.get_global_coord_offset(0, 0, -1)
         if not self.is_collapse(coords):
-            self.active_shape.direction += 3
-            self.active_shape.direction %= 4
-            return False
-        return True
+            self.active_shape.direction_id += 3
+            self.active_shape.direction_id %= 4
+            return True
+        return False
 
     # 合并
     def merge_board(self):
         for x, y in self.active_shape.get_global_coord():
-            self.data[x][y] = self.active_shape.shape_id
+            self.data[x][y] = self.active_shape.shape_id + 1
 
     # 删除整行
     def remove_lines(self):

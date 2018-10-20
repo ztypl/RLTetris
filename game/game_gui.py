@@ -41,10 +41,22 @@ class Board(QFrame):
 
 
 class GameGUI(QMainWindow):
-    def __init__(self):
+    BEFORE_START = 0
+    RUNNING = 1
+    PAUSED = 2
+    OVER = 3
+
+    def __init__(self, speed=1000):
         super().__init__()
-        self.speed = 10
+        self.speed = speed
         self.is_next_shape = True
+
+        # flag
+        self.game_status = self.BEFORE_START    # 0：未开始 1：正在运行 2：暂停 3：游戏结束
+
+        # gui
+        self.board = None
+        self.timer = None
         self.init_gui()
 
     def init_gui(self, width_block=10, height_block=22, grid_size=40):
@@ -65,6 +77,7 @@ class GameGUI(QMainWindow):
     def start(self):
         self.board.core.generate_next_shape()
         self.is_next_shape = False
+        self.game_status = self.RUNNING
         self.timer.start(self.speed, self)
         self.update()
 
@@ -75,13 +88,35 @@ class GameGUI(QMainWindow):
     def timerEvent(self, event):
         if event.timerId() == self.timer.timerId():
             if self.board.core.move_down():
-                print("1")
+                pass
             else:
+                self.board.core.merge_board()
+                self.board.core.remove_lines()
                 self.board.core.generate_next_shape()
-                print("2")
             self.update_window()
         else:
             super().timerEvent(event)
+
+    def keyPressEvent(self, event):
+        if self.game_status == self.RUNNING:
+            key = event.key()
+            if key in {Qt.Key_Left, Qt.Key_A}:
+                self.board.core.move_left()
+                self.update_window()
+                return
+            elif key in {Qt.Key_Right, Qt.Key_D}:
+                self.board.core.move_right()
+                self.update_window()
+                return
+            elif key in {Qt.Key_Up, Qt.Key_W}:
+                self.board.core.rotate_right()
+                self.update_window()
+                return
+
+        # ToDo: bug - 方块初始位置时旋转或移动报错 data数组多开3行 或者 修改碰撞函数判断条件
+
+        super().keyPressEvent(event)
+        return
 
 
 
