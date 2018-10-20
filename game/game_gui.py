@@ -43,6 +43,8 @@ class Board(QFrame):
 class GameGUI(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.speed = 10
+        self.is_next_shape = True
         self.init_gui()
 
     def init_gui(self, width_block=10, height_block=22, grid_size=40):
@@ -50,13 +52,36 @@ class GameGUI(QMainWindow):
         self.board = Board(self, grid_size, width_block, height_block)
         h_layout.addWidget(self.board)
 
+        self.timer = QBasicTimer()
+        self.setFocusPolicy(Qt.StrongFocus)
+
         self.setWindowTitle('Tetris')
         self.show()
 
         self.setFixedSize(self.board.width(), self.board.height())
 
+        self.start()
+
     def start(self):
-        pass
+        self.board.core.generate_next_shape()
+        self.is_next_shape = False
+        self.timer.start(self.speed, self)
+        self.update()
+
+    def update_window(self):
+        self.board.update()
+        self.update()
+
+    def timerEvent(self, event):
+        if event.timerId() == self.timer.timerId():
+            if self.board.core.move_down():
+                print("1")
+            else:
+                self.board.core.generate_next_shape()
+                print("2")
+            self.update_window()
+        else:
+            super().timerEvent(event)
 
 
 

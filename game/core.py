@@ -72,7 +72,10 @@ class BoardCore:
         return self.data[self.height - i - 1]
 
     def get_active_shape(self):
-        return [(self.height - x - 1, y) for x, y in self.active_shape.get_global_coord()]
+        if self.active_shape:
+            return [(self.height - x - 1, y) for x, y in self.active_shape.get_global_coord()]
+        else:
+            return []
 
     def random_init(self):
         for i in range(self.height // 2):
@@ -84,7 +87,7 @@ class BoardCore:
         return Shape(random.randint(0, 6), 0)
 
     # 下一个形状
-    def next_shape(self):
+    def generate_next_shape(self):
         self.active_shape = self.next_shape
         self.active_shape.set_center(self.width // 2, self.height - 1)
         self.next_shape = self.generate_shape()
@@ -101,24 +104,24 @@ class BoardCore:
         coords = self.active_shape.get_global_coord_offset(0, -1)
         if not self.is_collapse(coords):
             self.active_shape.cy -= 1
-            return True
-        return False
+            return False
+        return True
 
     # 右移
     def move_right(self):
         coords = self.active_shape.get_global_coord_offset(0, 1)
         if not self.is_collapse(coords):
             self.active_shape.cy += 1
-            return True
-        return False
+            return False
+        return True
 
     # 下移
     def move_down(self):
         coords = self.active_shape.get_global_coord_offset(-1, 0)
         if not self.is_collapse(coords):
             self.active_shape.cx += 1
-            return True
-        return False
+            return False
+        return True
 
     # 顺时针旋转
     def rotate_right(self):
@@ -126,8 +129,8 @@ class BoardCore:
         if not self.is_collapse(coords):
             self.active_shape.direction += 1
             self.active_shape.direction %= 4
-            return True
-        return False
+            return False
+        return True
 
     # 逆时针旋转
     def rotate_left(self):
@@ -135,8 +138,8 @@ class BoardCore:
         if not self.is_collapse(coords):
             self.active_shape.direction += 3
             self.active_shape.direction %= 4
-            return True
-        return False
+            return False
+        return True
 
     # 合并
     def merge_board(self):
