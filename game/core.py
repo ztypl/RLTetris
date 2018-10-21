@@ -55,11 +55,14 @@ class Shape:
 
 
 class BoardCore:
-    def __init__(self, width=10, height=22, method="random"):
+    score_map = [0, 40, 100, 300, 1200]
+
+    def __init__(self, width=10, height=22, method="normal"):
         self.width = width
         self.height = height
 
         self.data = [[0 for x in range(self.width)] for y in range(self.height)]
+        self.score = 0
         if method == 'random':
             self.random_init()
         self.active_shape = None
@@ -95,7 +98,8 @@ class BoardCore:
     # 检测是否越界或碰撞
     def is_collapse(self, coords):
         for x, y in coords:
-            if x < 0 or y < 0 or y >= self.width or self.data[x][y] != 0:
+            if x < 0 or y < 0 or y >= self.width or \
+                    (x < self.height and self.data[x][y] != 0):
                 return True
         return False
 
@@ -144,15 +148,20 @@ class BoardCore:
     # 合并
     def merge_board(self):
         for x, y in self.active_shape.get_global_coord():
-            self.data[x][y] = self.active_shape.shape_id + 1
+            if x < self.height and self.data[x][y] == 0:
+                self.data[x][y] = self.active_shape.shape_id + 1
+            else:
+                return False
+        return True
 
     # 删除整行
     def remove_lines(self):
-        removed__line_id = []
+        removed_line_id = []
         for i in range(self.height-1, -1, -1):
             if all(self.data[i]):
                 self.data.pop(i)
                 self.data.append([0 for _ in range(self.width)])
-                removed__line_id.append(i)
-        return removed__line_id
+                removed_line_id.append(i)
+        self.score += self.score_map[min(len(removed_line_id), 4)]
+        return removed_line_id
 

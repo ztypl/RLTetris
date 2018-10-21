@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QHBoxLayout, QLabel
-from PyQt5.QtCore import Qt, QBasicTimer, pyqtSignal
+from PyQt5.QtCore import Qt, QBasicTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPainter, QColor
 from .core import BoardCore
 
@@ -40,11 +40,23 @@ class Board(QFrame):
             Drawing.draw_square(painter, y * self.grid_size, x * self.grid_size, val, self.grid_size)
 
 
+class NextBlockPanel(QFrame):
+    def __init__(self, parent, grid_size):
+        self.grid_size = grid_size
+        super().__init__(parent)
+        self.setFixedSize(grid_size * 4, grid_size * 2)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+
+
 class GameGUI(QMainWindow):
     BEFORE_START = 0
     RUNNING = 1
     PAUSED = 2
     OVER = 3
+
+    sgn_game_over = pyqtSignal()
 
     def __init__(self, speed=1000):
         super().__init__()
@@ -54,12 +66,17 @@ class GameGUI(QMainWindow):
         # flag
         self.game_status = self.BEFORE_START    # 0：未开始 1：正在运行 2：暂停 3：游戏结束
 
+        # signal
+        self.sgn_game_over.connect(self.game_over)
+
         # gui
         self.board = None
         self.timer = None
         self.init_gui()
+        self.start()
 
-    def init_gui(self, width_block=10, height_block=22, grid_size=40):
+
+    def init_gui(self, width_block=10, height_block=22, grid_size=20):
         h_layout = QHBoxLayout()
         self.board = Board(self, grid_size, width_block, height_block)
         h_layout.addWidget(self.board)
@@ -68,11 +85,12 @@ class GameGUI(QMainWindow):
         self.setFocusPolicy(Qt.StrongFocus)
 
         self.setWindowTitle('Tetris')
-        self.show()
-
         self.setFixedSize(self.board.width(), self.board.height())
 
-        self.start()
+
+        self.show()
+
+
 
     def start(self):
         self.board.core.generate_next_shape()
@@ -85,14 +103,27 @@ class GameGUI(QMainWindow):
         self.board.update()
         self.update()
 
+    def next_block(self):
+        if self.board.core.merge_board():
+            self.board.core.remove_lines()
+            self.board.core.generate_next_shape()
+            return True
+        else:
+            self.sgn_game_over.emit()
+            return False
+
+    def game_over(self):
+        print('close')
+        self.close()
+
+
+
     def timerEvent(self, event):
         if event.timerId() == self.timer.timerId():
             if self.board.core.move_down():
                 pass
             else:
-                self.board.core.merge_board()
-                self.board.core.remove_lines()
-                self.board.core.generate_next_shape()
+                self.next_block()
             self.update_window()
         else:
             super().timerEvent(event)
@@ -112,9 +143,10 @@ class GameGUI(QMainWindow):
                 self.board.core.rotate_right()
                 self.update_window()
                 return
-
-        # ToDo: bug - 方块初始位置时旋转或移动报错 data数组多开3行 或者 修改碰撞函数判断条件
-
+            elif key in {Qt.Key_Down, Qt.Key_S}:
+                if not self.board.core.move_down():
+                    self.next_block()
+                self.update_window()
         super().keyPressEvent(event)
         return
 
