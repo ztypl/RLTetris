@@ -80,6 +80,9 @@ class BoardCore:
         else:
             return []
 
+    def get_next_shape(self):
+        return self.next_shape.get_local_coord()
+
     def random_init(self):
         for i in range(self.height // 2):
             for j in range(self.width):

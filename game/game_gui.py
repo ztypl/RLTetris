@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QHBoxLayout, QLabel, QWidget
 from PyQt5.QtCore import Qt, QBasicTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPainter, QColor
 from .core import BoardCore
@@ -27,6 +27,8 @@ class Board(QFrame):
         super().__init__(parent)
         self.core = BoardCore(width=width_blocks, height=height_blocks)
         self.setFixedSize(grid_size * width_blocks, grid_size * height_blocks)
+        self.setFrameShape(QFrame.Box)
+
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -41,13 +43,24 @@ class Board(QFrame):
 
 
 class NextBlockPanel(QFrame):
-    def __init__(self, parent, grid_size):
+    def __init__(self, parent, grid_size, shape):
         self.grid_size = grid_size
+        self.width_block = 4
+        self.height_block = 4
+        self.shape = shape
         super().__init__(parent)
-        self.setFixedSize(grid_size * 4, grid_size * 2)
+        self.setFrameShape(QFrame.Box)
+        self.setFixedSize(grid_size * self.width_block, grid_size * self.height_block)
+
+    def set_shape(self, shape):
+        self.shape = shape
 
     def paintEvent(self, event):
         painter = QPainter(self)
+        val = self.shape.shape_id + 1
+        for x, y in self.shape.get_local_coord():
+            Drawing.draw_square(painter, (x + 1) * self.grid_size, (y + 2) * self.grid_size, val, self.grid_size)
+
 
 
 class GameGUI(QMainWindow):
@@ -71,26 +84,31 @@ class GameGUI(QMainWindow):
 
         # gui
         self.board = None
+        self.next_panel = None
         self.timer = None
         self.init_gui()
         self.start()
 
 
     def init_gui(self, width_block=10, height_block=22, grid_size=20):
+        center_widget = QWidget()
+
+
         h_layout = QHBoxLayout()
-        self.board = Board(self, grid_size, width_block, height_block)
+        self.board = Board(center_widget, grid_size, width_block, height_block)
+        self.next_panel = NextBlockPanel(center_widget, grid_size, self.board.core.next_shape)
         h_layout.addWidget(self.board)
+        h_layout.addWidget(self.next_panel)
 
         self.timer = QBasicTimer()
         self.setFocusPolicy(Qt.StrongFocus)
 
         self.setWindowTitle('Tetris')
-        self.setFixedSize(self.board.width(), self.board.height())
-
-
+        center_widget.setFixedSize(self.board.width() + self.next_panel.width(), self.board.height())
+        # self.setFixedSize(self.board.width() + self.next_panel.width(), self.board.height())
+        center_widget.setLayout(h_layout)
+        self.setCentralWidget(center_widget)
         self.show()
-
-
 
     def start(self):
         self.board.core.generate_next_shape()
@@ -101,12 +119,14 @@ class GameGUI(QMainWindow):
 
     def update_window(self):
         self.board.update()
+        self.next_panel.update()
         self.update()
 
     def next_block(self):
         if self.board.core.merge_board():
             self.board.core.remove_lines()
             self.board.core.generate_next_shape()
+            self.next_panel.set_shape(self.board.core.next_shape)
             return True
         else:
             self.sgn_game_over.emit()
@@ -115,8 +135,6 @@ class GameGUI(QMainWindow):
     def game_over(self):
         print('close')
         self.close()
-
-
 
     def timerEvent(self, event):
         if event.timerId() == self.timer.timerId():
