@@ -56,6 +56,7 @@ class Shape:
 
 class BoardCore:
     score_map = [0, 40, 100, 300, 1200]
+    max_score =999999
 
     def __init__(self, width=10, height=22, method="normal"):
         self.width = width
@@ -166,5 +167,6 @@ class BoardCore:
                 self.data.append([0 for _ in range(self.width)])
                 removed_line_id.append(i)
         self.score += self.score_map[min(len(removed_line_id), 4)]
+        self.score = min(self.score, self.max_score)
         return removed_line_id
 

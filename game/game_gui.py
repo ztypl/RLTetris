@@ -1,5 +1,6 @@
 import sys
-from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QHBoxLayout, QLabel, QWidget
+from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, \
+    QHBoxLayout, QVBoxLayout, QLabel, QWidget, QLCDNumber
 from PyQt5.QtCore import Qt, QBasicTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPainter, QColor
 from .core import BoardCore
@@ -85,6 +86,7 @@ class GameGUI(QMainWindow):
     OVER = 3
 
     sgn_game_over = pyqtSignal()
+    sgn_update_score = pyqtSignal(int)
 
     def __init__(self, speed=1000):
         super().__init__()
@@ -95,10 +97,12 @@ class GameGUI(QMainWindow):
 
         # signal
         self.sgn_game_over.connect(self.game_over)
+        self.sgn_update_score.connect(self.update_score)
 
         # gui
         self.board = None
         self.next_panel = None
+        self.score_ui = None
         self.timer = None
         self.init_gui()
         self.start()
@@ -109,8 +113,24 @@ class GameGUI(QMainWindow):
         h_layout = QHBoxLayout()
         self.board = Board(None, grid_size, width_block, height_block)
         self.next_panel = NextBlockPanel(None, grid_size, self.board.core.next_shape)
+
+        self.score_ui = QLCDNumber(self)
+        self.score_ui.setDigitCount(6)
+        self.score_ui.setSegmentStyle(QLCDNumber.Flat)
+        self.score_ui.setFixedHeight(50)
+        self.score_ui.display(0)
+
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        right_layout.addWidget(self.next_panel, 0, Qt.AlignCenter | Qt.AlignTop)
+        right_layout.addWidget(QLabel("<h3>Score</h3>"), 0, Qt.AlignLeft | Qt.AlignTop)
+        right_layout.addWidget(self.score_ui, 1, Qt.AlignCenter | Qt.AlignTop)
+        right_layout.setSpacing(0)
+        right_widget.setLayout(right_layout)
+
         h_layout.addWidget(self.board)
-        h_layout.addWidget(self.next_panel)
+        h_layout.addWidget(right_widget)
+        h_layout.setSpacing(0)
 
         self.timer = QBasicTimer()
         self.setFocusPolicy(Qt.StrongFocus)
@@ -121,7 +141,6 @@ class GameGUI(QMainWindow):
         center_widget.setLayout(h_layout)
 
         self.setCentralWidget(center_widget)
-
 
         print(self.dockOptions())
 
@@ -138,11 +157,13 @@ class GameGUI(QMainWindow):
     def update_window(self):
         self.board.update()
         self.next_panel.update()
+        # self.score_ui.update()
         self.update()
 
     def next_block(self):
         if self.board.core.merge_board():
             self.board.core.remove_lines()
+            self.sgn_update_score.emit(self.board.core.score)
             self.board.core.generate_next_shape()
             self.next_panel.set_shape(self.board.core.next_shape)
             return True
@@ -153,6 +174,9 @@ class GameGUI(QMainWindow):
     def game_over(self):
         print('close')
         self.close()
+
+    def update_score(self, score):
+        self.score_ui.display(score)
 
     def timerEvent(self, event):
         if event.timerId() == self.timer.timerId():

@@ -1,61 +1,52 @@
+# -*- coding: utf-8 -*-
+
+'''
+    【简介】
+	PyQt5中Qlabel例子
+   按住 Alt + N , Alt + P , Alt + O , Alt + C 切换组件控件
+
+'''
+
+from PyQt5.QtWidgets import *
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QFrame, QHBoxLayout, QVBoxLayout, QGridLayout, QFormLayout, QPushButton
 
 
-class MyWindow(QFrame):
+class QlabelDemo(QDialog):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('嵌套布局示例')
 
-        # 全局布局（1个）：水平
-        wlayout = QHBoxLayout()
-        # 局部布局（4个）：水平、竖直、网格、表单
-        hlayout = QHBoxLayout()
-        vlayout = QVBoxLayout()
-        glayout = QGridLayout()
-        formlayout = QFormLayout()
+        self.setWindowTitle('Qlabel 例子')
+        nameLb1 = QLabel('&Name', self)
+        nameEd1 = QLineEdit(self)
+        nameLb1.setBuddy(nameEd1)
 
-        # 局部布局添加部件（例如：按钮）
-        hlayout.addWidget(QPushButton(str(1)))
-        hlayout.addWidget(QPushButton(str(2)))
-        vlayout.addWidget(QPushButton(str(3)))
-        vlayout.addWidget(QPushButton(str(4)))
-        glayout.addWidget(QPushButton(str(5)), 0, 0)
-        glayout.addWidget(QPushButton(str(6)), 0, 1)
-        glayout.addWidget(QPushButton(str(7)), 1, 0)
-        glayout.addWidget(QPushButton(str(8)), 1, 1)
-        formlayout.addWidget(QPushButton(str(9)))
-        formlayout.addWidget(QPushButton(str(10)))
-        formlayout.addWidget(QPushButton(str(11)))
-        formlayout.addWidget(QPushButton(str(12)))
+        nameLb2 = QLabel('&Password', self)
+        nameEd2 = QLineEdit(self)
+        nameLb2.setBuddy(nameEd2)
 
-        # 准备四个部件
-        hwg = QFrame()
-        vwg = QFrame()
-        gwg = QFrame()
-        fwg = QFrame()
+        btnOk = QPushButton('&OK')
+        btnCancel = QPushButton('&Cancel')
+        mainLayout = QGridLayout(self)
+        mainLayout.addWidget(nameLb1, 0, 0)
+        mainLayout.addWidget(nameEd1, 0, 1, 1, 2)
 
-        hwg.setFrameShape(QFrame.Box)
+        mainLayout.addWidget(nameLb2, 1, 0)
+        mainLayout.addWidget(nameEd2, 1, 1, 1, 2)
 
-        # 四个部件设置局部布局
-        hwg.setLayout(hlayout)
-        vwg.setLayout(vlayout)
-        gwg.setLayout(glayout)
-        fwg.setLayout(formlayout)
+        mainLayout.addWidget(btnOk, 2, 1)
+        mainLayout.addWidget(btnCancel, 2, 2)
 
-        # 四个部件加至全局布局
-        wlayout.addWidget(hwg)
-        wlayout.addWidget(vwg)
-        wlayout.addWidget(gwg)
-        wlayout.addWidget(fwg)
 
-        # 窗体本体设置全局布局
-        self.setLayout(wlayout)
+def link_hovered():
+    print("当鼠标滑过label-2标签时，触发事件。")
+
+
+def link_clicked():
+    print("当鼠标点击label-4标签时，触发事件。")
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    win = MyWindow()
-    win.show()
+    labelDemo = QlabelDemo()
+    labelDemo.show()
     sys.exit(app.exec_())
-
